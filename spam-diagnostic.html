@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Spam Diagnostic Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .card h3 {
+            color: #555;
+            margin: 20px 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-container {
+            display: none;
+        }
+
+        .results-container.show {
+            display: block;
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .score-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .score-label {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .score-description {
+            font-size: 1rem;
+            margin-top: 10px;
+            opacity: 0.85;
+        }
+
+        .diagnostic-section {
+            margin-bottom: 30px;
+        }
+
+        .diagnostic-item {
+            background: #f8f9fa;
+            border-left: 4px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .diagnostic-item.pass {
+            border-left-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .diagnostic-item.warning {
+            border-left-color: #ff9800;
+            background: #fff8e1;
+        }
+
+        .diagnostic-item.fail {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .diagnostic-item h4 {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .diagnostic-item .icon {
+            font-size: 1.2rem;
+        }
+
+        .diagnostic-item p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .diagnostic-item .recommendation {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .diagnostic-item .recommendation strong {
+            color: #667eea;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+
+        .info-box p, .info-box li {
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+
+        .issue-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+
+        .issue-list li {
+            padding: 5px 0;
+            color: #d32f2f;
+        }
+
+        .issue-list li::before {
+            content: "• ";
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .score-display {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Email Spam Diagnostic Tool</h1>
+            <p>Analyze your email content and settings to identify why emails might be going to spam</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Form -->
+            <div class="card">
+                <h2>Email Information</h2>
+
+                <div class="info-box">
+                    <h4>What does this tool check?</h4>
+                    <ul>
+                        <li>Email content for spam trigger words</li>
+                        <li>Subject line quality</li>
+                        <li>Link and formatting issues</li>
+                        <li>Sender reputation factors</li>
+                        <li>Authentication setup guidance</li>
+                    </ul>
+                </div>
+
+                <form id="diagnosticForm">
+                    <div class="form-group">
+                        <label for="senderEmail">Your Sender Email Address *</label>
+                        <input type="email" id="senderEmail" placeholder="sender@yourdomain.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="senderName">Sender Name</label>
+                        <input type="text" id="senderName" placeholder="Your Company Name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject">Email Subject Line *</label>
+                        <input type="text" id="subject" placeholder="Your email subject" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="emailContent">Email Content (Body) *</label>
+                        <textarea id="emailContent" placeholder="Paste your email content here..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipientType">Email Type</label>
+                        <select id="recipientType" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem;">
+                            <option value="marketing">Marketing/Newsletter</option>
+                            <option value="transactional">Transactional</option>
+                            <option value="personal">Personal</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn">🔍 Analyze Email</button>
+                </form>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="card">
+                <h2>Quick Spam Prevention Tips</h2>
+
+                <h3>🔐 Email Authentication</h3>
+                <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+                    Setting up proper email authentication is crucial for deliverability:
+                </p>
+                <div class="info-box">
+                    <p><strong>SPF (Sender Policy Framework):</strong> Verifies that emails come from authorized servers for your domain.</p>
+                    <p style="margin-top: 8px;"><strong>DKIM (DomainKeys Identified Mail):</strong> Adds a digital signature to verify email authenticity.</p>
+                    <p style="margin-top: 8px;"><strong>DMARC (Domain-based Message Authentication):</strong> Tells receiving servers how to handle emails that fail SPF/DKIM checks.</p>
+                </div>
+
+                <h3>✍️ Content Best Practices</h3>
+                <ul style="margin-left: 20px; color: #666; line-height: 1.8;">
+                    <li>Avoid ALL CAPS in subject lines</li>
+                    <li>Limit exclamation marks (!!!) and urgency words</li>
+                    <li>Include more text than images</li>
+                    <li>Use reputable links (avoid URL shorteners)</li>
+                    <li>Keep HTML clean and simple</li>
+                    <li>Include an unsubscribe link for marketing emails</li>
+                </ul>
+
+                <h3>📊 Sender Reputation</h3>
+                <ul style="margin-left: 20px; color: #666; line-height: 1.8;">
+                    <li>Maintain consistent sending patterns</li>
+                    <li>Monitor bounce rates (keep below 5%)</li>
+                    <li>Process unsubscribes promptly</li>
+                    <li>Use a dedicated IP for high-volume sending</li>
+                    <li>Warm up new domains gradually</li>
+                </ul>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card full-width results-container" id="resultsContainer">
+                <h2>Diagnostic Results</h2>
+
+                <div class="score-card">
+                    <div class="score-label">Overall Spam Risk Score</div>
+                    <div class="score-display" id="overallScore">0</div>
+                    <div class="score-description" id="scoreDescription">Lower is better (0-100 scale)</div>
+                </div>
+
+                <div id="diagnosticResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Spam trigger words database
+        const spamTriggerWords = {
+            high: [
+                'free', 'click here', 'click below', 'urgent', 'act now', 'limited time',
+                'buy now', 'order now', 'clearance', '100% free', 'prize', 'winner',
+                'congratulations', 'you\'ve been selected', 'earn money', 'make money',
+                'work from home', 'be your own boss', 'multi level marketing', 'mlm',
+                'cash bonus', 'credit card offers', 'refinance', 'viagra', 'weight loss',
+                'lose weight', 'casino', 'lottery', 'meet singles', 'dating',
+                'risk-free', 'satisfaction guaranteed', 'money back', 'no obligation',
+                'free trial', 'cancel anytime', 'credit score', 'debt', 'income',
+                'investment', 'increase sales', 'increase traffic', 'double your',
+                'guarantee', 'promise', 'no cost', 'no fees', 'membership', 'copy',
+                'fast cash', 'instant', 'while supplies last', 'only', 'amazing',
+                'exclusive', 'deal', 'discount', 'lowest price', 'miracle'
+            ],
+            medium: [
+                'affordable', 'apply now', 'call now', 'subscribe', 'subscribe now',
+                'join millions', 'limited offer', 'special promotion', 'this isn\'t spam',
+                'great offer', 'once in a lifetime', 'please read', 'important information',
+                'for instant access', 'all new', 'as seen on', 'click to remove',
+                'opt in', 'success', 'sale', 'save big', 'act now', 'don\'t delete',
+                'marketing solution', 'auto email removal', 'click to subscribe'
+            ]
+        };
+
+        // Form submission handler
+        document.getElementById('diagnosticForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            analyzEmail();
+        });
+
+        function analyzeEmail() {
+            const senderEmail = document.getElementById('senderEmail').value.trim();
+            const senderName = document.getElementById('senderName').value.trim();
+            const subject = document.getElementById('subject').value.trim();
+            const content = document.getElementById('emailContent').value.trim();
+            const recipientType = document.getElementById('recipientType').value;
+
+            // Perform various diagnostics
+            const results = {
+                subjectLine: analyzeSubjectLine(subject),
+                content: analyzeContent(content),
+                senderInfo: analyzeSenderInfo(senderEmail, senderName),
+                links: analyzeLinks(content),
+                formatting: analyzeFormatting(content, subject),
+                authentication: analyzeAuthentication(senderEmail),
+                emailType: analyzeEmailType(content, recipientType)
+            };
+
+            // Calculate overall score
+            const overallScore = calculateOverallScore(results);
+
+            // Display results
+            displayResults(results, overallScore);
+        }
+
+        function analyzeSubjectLine(subject) {
+            const issues = [];
+            const warnings = [];
+            let score = 0;
+
+            // Check length
+            if (subject.length < 10) {
+                issues.push('Subject line is too short');
+                score += 10;
+            } else if (subject.length > 60) {
+                warnings.push('Subject line is longer than recommended (60 chars)');
+                score += 5;
+            }
+
+            // Check for ALL CAPS
+            const capsPercentage = (subject.match(/[A-Z]/g) || []).length / subject.length;
+            if (capsPercentage > 0.5) {
+                issues.push('Too many capital letters in subject');
+                score += 15;
+            }
+
+            // Check for excessive punctuation
+            const exclamationCount = (subject.match(/!/g) || []).length;
+            if (exclamationCount > 1) {
+                issues.push('Too many exclamation marks');
+                score += 10;
+            }
+
+            // Check for spam trigger words
+            const subjectLower = subject.toLowerCase();
+            const foundTriggerWords = [];
+
+            spamTriggerWords.high.forEach(word => {
+                if (subjectLower.includes(word)) {
+                    foundTriggerWords.push(word);
+                    score += 20;
+                }
+            });
+
+            spamTriggerWords.medium.forEach(word => {
+                if (subjectLower.includes(word)) {
+                    foundTriggerWords.push(word);
+                    score += 10;
+                }
+            });
+
+            if (foundTriggerWords.length > 0) {
+                issues.push(`Spam trigger words found: ${foundTriggerWords.join(', ')}`);
+            }
+
+            // Check for spammy symbols
+            if (/[$€£]/.test(subject)) {
+                warnings.push('Contains currency symbols');
+                score += 5;
+            }
+
+            return {
+                score,
+                issues,
+                warnings,
+                status: score === 0 ? 'pass' : score < 20 ? 'warning' : 'fail',
+                title: 'Subject Line Analysis'
+            };
+        }
+
+        function analyzeContent(content) {
+            const issues = [];
+            const warnings = [];
+            let score = 0;
+
+            // Check content length
+            if (content.length < 50) {
+                issues.push('Email content is very short');
+                score += 10;
+            }
+
+            // Check for ALL CAPS
+            const words = content.split(/\s+/);
+            const capsWords = words.filter(word => word.length > 3 && word === word.toUpperCase());
+            const capsPercentage = capsWords.length / words.length;
+
+            if (capsPercentage > 0.3) {
+                issues.push('Too many words in ALL CAPS');
+                score += 15;
+            } else if (capsPercentage > 0.1) {
+                warnings.push('Moderate use of ALL CAPS detected');
+                score += 5;
+            }
+
+            // Check for spam trigger words
+            const contentLower = content.toLowerCase();
+            const foundTriggerWords = [];
+
+            spamTriggerWords.high.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                const matches = contentLower.match(regex);
+                if (matches) {
+                    foundTriggerWords.push(`${word} (${matches.length}x)`);
+                    score += matches.length * 15;
+                }
+            });
+
+            spamTriggerWords.medium.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                const matches = contentLower.match(regex);
+                if (matches && matches.length > 2) {
+                    foundTriggerWords.push(`${word} (${matches.length}x)`);
+                    score += matches.length * 5;
+                }
+            });
+
+            if (foundTriggerWords.length > 0) {
+                issues.push(`Spam trigger words found: ${foundTriggerWords.slice(0, 10).join(', ')}${foundTriggerWords.length > 10 ? '...' : ''}`);
+            }
+
+            // Check for excessive punctuation
+            const exclamationCount = (content.match(/!/g) || []).length;
+            if (exclamationCount > 5) {
+                issues.push(`Excessive exclamation marks (${exclamationCount})`);
+                score += 10;
+            }
+
+            // Check for image-to-text ratio indicators
+            const htmlImageTags = (content.match(/<img/gi) || []).length;
+            if (htmlImageTags > 3 && content.length < 500) {
+                warnings.push('High image-to-text ratio detected');
+                score += 10;
+            }
+
+            return {
+                score,
+                issues,
+                warnings,
+                stats: {
+                    wordCount: words.length,
+                    capsWords: capsWords.length,
+                    exclamations: exclamationCount
+                },
+                status: score === 0 ? 'pass' : score < 30 ? 'warning' : 'fail',
+                title: 'Content Analysis'
+            };
+        }
+
+        function analyzeLinks(content) {
+            const issues = [];
+            const warnings = [];
+            let score = 0;
+
+            // Extract URLs
+            const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
+            const urls = content.match(urlRegex) || [];
+
+            // Check URL shorteners
+            const shorteners = ['bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'ow.ly', 'buff.ly'];
+            const shortUrls = urls.filter(url =>
+                shorteners.some(shortener => url.includes(shortener))
+            );
+
+            if (shortUrls.length > 0) {
+                issues.push(`URL shorteners detected (${shortUrls.length})`);
+                score += shortUrls.length * 15;
+            }
+
+            // Check for too many links
+            if (urls.length > 10) {
+                issues.push(`Too many links (${urls.length})`);
+                score += 20;
+            } else if (urls.length > 5) {
+                warnings.push(`High number of links (${urls.length})`);
+                score += 10;
+            }
+
+            // Check for suspicious domains
+            const suspiciousPatterns = ['.xyz', '.top', '.win', '.review', '.loan'];
+            const suspiciousLinks = urls.filter(url =>
+                suspiciousPatterns.some(pattern => url.includes(pattern))
+            );
+
+            if (suspiciousLinks.length > 0) {
+                warnings.push(`Links with suspicious TLDs detected (${suspiciousLinks.length})`);
+                score += suspiciousLinks.length * 10;
+            }
+
+            return {
+                score,
+                issues,
+                warnings,
+                stats: {
+                    totalLinks: urls.length,
+                    shortLinks: shortUrls.length,
+                    suspiciousLinks: suspiciousLinks.length
+                },
+                status: score === 0 ? 'pass' : score < 25 ? 'warning' : 'fail',
+                title: 'Link Analysis'
+            };
+        }
+
+        function analyzeSenderInfo(email, name) {
+            const issues = [];
+            const warnings = [];
+            let score = 0;
+
+            // Check if email is from a free provider
+            const freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com'];
+            const domain = email.split('@')[1]?.toLowerCase();
+
+            if (freeProviders.includes(domain)) {
+                warnings.push('Using a free email provider (consider using a business domain)');
+                score += 15;
+            }
+
+            // Check for generic email addresses
+            const genericPrefixes = ['noreply', 'no-reply', 'donotreply', 'info', 'admin'];
+            const emailPrefix = email.split('@')[0]?.toLowerCase();
+
+            if (genericPrefixes.includes(emailPrefix)) {
+                warnings.push('Using a generic email address (recipients can\'t reply)');
+                score += 10;
+            }
+
+            // Check if sender name is missing
+            if (!name || name.trim().length === 0) {
+                warnings.push('No sender name provided');
+                score += 5;
+            }
+
+            return {
+                score,
+                issues,
+                warnings,
+                status: score === 0 ? 'pass' : score < 20 ? 'warning' : 'fail',
+                title: 'Sender Information'
+            };
+        }
+
+        function analyzeFormatting(content, subject) {
+            const issues = [];
+            const warnings = [];
+            let score = 0;
+
+            // Check for HTML
+            const hasHTML = /<[^>]+>/.test(content);
+
+            if (hasHTML) {
+                // Check for proper HTML structure
+                const hasDoctype = /<!DOCTYPE/i.test(content);
+                const hasHtmlTag = /<html/i.test(content);
+
+                if (hasDoctype || hasHtmlTag) {
+                    warnings.push('Contains full HTML document (ensure it\'s properly formatted)');
+                }
+
+                // Check for inline styles overuse
+                const inlineStyles = (content.match(/style=/gi) || []).length;
+                if (inlineStyles > 20) {
+                    warnings.push('Heavy use of inline styles detected');
+                    score += 5;
+                }
+            }
+
+            // Check for special characters
+            const specialCharsCount = (content.match(/[★☆♥♦♣♠•◘○◙♂♀♪♫]/g) || []).length;
+            if (specialCharsCount > 5) {
+                warnings.push('Excessive special characters detected');
+                score += 5;
+            }
+
+            return {
+                score,
+                issues,
+                warnings,
+                status: score === 0 ? 'pass' : 'warning',
+                title: 'Formatting & Structure'
+            };
+        }
+
+        function analyzeAuthentication(email) {
+            const domain = email.split('@')[1];
+            const issues = [];
+            const warnings = [];
+
+            // This is informational only - we can't actually check SPF/DKIM/DMARC from the browser
+            warnings.push('Please verify your domain has proper SPF, DKIM, and DMARC records configured');
+
+            return {
+                score: 0,
+                issues,
+                warnings,
+                info: [
+                    `Check SPF record: Use an online SPF checker for ${domain}`,
+                    `Check DKIM: Ensure your email service provider has DKIM enabled`,
+                    `Check DMARC: Set up a DMARC policy for your domain`,
+                    `Monitor: Use tools like mail-tester.com to verify configuration`
+                ],
+                status: 'warning',
+                title: 'Email Authentication (SPF/DKIM/DMARC)'
+            };
+        }
+
+        function analyzeEmailType(content, type) {
+            const issues = [];
+            const warnings = [];
+            let score = 0;
+
+            const contentLower = content.toLowerCase();
+            const hasUnsubscribe = contentLower.includes('unsubscribe') ||
+                                   contentLower.includes('opt-out') ||
+                                   contentLower.includes('opt out');
+
+            if (type === 'marketing' && !hasUnsubscribe) {
+                issues.push('Marketing email missing unsubscribe link (required by law)');
+                score += 25;
+            }
+
+            // Check for physical address (CAN-SPAM requirement for commercial emails)
+            const hasAddress = /\d+\s+[\w\s]+,\s*[\w\s]+,\s*[A-Z]{2}\s+\d{5}/.test(content);
+            if (type === 'marketing' && !hasAddress) {
+                warnings.push('Marketing email should include physical mailing address (CAN-SPAM Act)');
+                score += 10;
+            }
+
+            return {
+                score,
+                issues,
+                warnings,
+                status: score === 0 ? 'pass' : score < 20 ? 'warning' : 'fail',
+                title: 'Email Type & Compliance'
+            };
+        }
+
+        function calculateOverallScore(results) {
+            let totalScore = 0;
+            for (let key in results) {
+                totalScore += results[key].score || 0;
+            }
+            return Math.min(totalScore, 100); // Cap at 100
+        }
+
+        function displayResults(results, overallScore) {
+            // Show results container
+            const container = document.getElementById('resultsContainer');
+            container.classList.add('show');
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // Update score
+            document.getElementById('overallScore').textContent = overallScore;
+
+            // Update score description
+            const scoreDesc = document.getElementById('scoreDescription');
+            if (overallScore < 20) {
+                scoreDesc.textContent = '✅ Excellent! Low spam risk';
+                scoreDesc.parentElement.style.background = 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)';
+            } else if (overallScore < 50) {
+                scoreDesc.textContent = '⚠️ Moderate spam risk - review recommendations';
+                scoreDesc.parentElement.style.background = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+            } else {
+                scoreDesc.textContent = '❌ High spam risk - immediate action needed';
+                scoreDesc.parentElement.style.background = 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)';
+            }
+
+            // Display detailed results
+            const resultsDiv = document.getElementById('diagnosticResults');
+            resultsDiv.innerHTML = '';
+
+            for (let key in results) {
+                const result = results[key];
+                resultsDiv.innerHTML += createDiagnosticSection(result);
+            }
+
+            // Add recommendations section
+            resultsDiv.innerHTML += createRecommendationsSection(results, overallScore);
+        }
+
+        function createDiagnosticSection(result) {
+            const statusIcon = {
+                pass: '✅',
+                warning: '⚠️',
+                fail: '❌'
+            };
+
+            let html = `
+                <div class="diagnostic-section">
+                    <div class="diagnostic-item ${result.status}">
+                        <h4>
+                            <span class="icon">${statusIcon[result.status]}</span>
+                            ${result.title}
+                            <span style="margin-left: auto; font-size: 0.9rem;">${result.score || 0} points</span>
+                        </h4>
+            `;
+
+            if (result.issues && result.issues.length > 0) {
+                html += '<ul class="issue-list">';
+                result.issues.forEach(issue => {
+                    html += `<li>${issue}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            if (result.warnings && result.warnings.length > 0) {
+                html += '<p style="color: #f57c00; margin-top: 10px;"><strong>Warnings:</strong></p>';
+                html += '<ul style="margin-left: 20px; color: #666;">';
+                result.warnings.forEach(warning => {
+                    html += `<li>${warning}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            if (result.info && result.info.length > 0) {
+                html += '<p style="color: #1976d2; margin-top: 10px;"><strong>Information:</strong></p>';
+                html += '<ul style="margin-left: 20px; color: #666;">';
+                result.info.forEach(info => {
+                    html += `<li>${info}</li>`;
+                });
+                html += '</ul>';
+            }
+
+            if (result.stats) {
+                html += '<div class="stats-grid">';
+                for (let statKey in result.stats) {
+                    const statLabel = statKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    html += `
+                        <div class="stat-item">
+                            <div class="stat-value">${result.stats[statKey]}</div>
+                            <div class="stat-label">${statLabel}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+            }
+
+            // Add recommendations based on issues
+            if ((result.issues && result.issues.length > 0) || (result.warnings && result.warnings.length > 0)) {
+                html += '<div class="recommendation">';
+                html += '<strong>💡 Recommendations:</strong><br>';
+                html += getRecommendations(result.title, result.issues, result.warnings);
+                html += '</div>';
+            }
+
+            html += '</div></div>';
+            return html;
+        }
+
+        function getRecommendations(title, issues, warnings) {
+            const recommendations = {
+                'Subject Line Analysis': `
+                    • Keep subject lines between 30-50 characters<br>
+                    • Avoid ALL CAPS and excessive punctuation<br>
+                    • Remove spam trigger words like "FREE", "URGENT", "ACT NOW"<br>
+                    • Be specific and personalize when possible
+                `,
+                'Content Analysis': `
+                    • Use a natural tone and avoid marketing hype<br>
+                    • Keep ALL CAPS usage minimal<br>
+                    • Limit exclamation marks to 1-2 per email<br>
+                    • Focus on providing value, not just selling<br>
+                    • Balance text and images (more text is better)
+                `,
+                'Link Analysis': `
+                    • Use full, non-shortened URLs when possible<br>
+                    • Limit the number of links (3-5 is ideal)<br>
+                    • Ensure all links are HTTPS<br>
+                    • Link to reputable, established domains<br>
+                    • Avoid suspicious TLDs like .xyz, .top, .win
+                `,
+                'Sender Information': `
+                    • Use a business domain instead of free email providers<br>
+                    • Include a clear sender name<br>
+                    • Use a reply-able email address (not noreply@)<br>
+                    • Keep "From" name consistent
+                `,
+                'Email Authentication (SPF/DKIM/DMARC)': `
+                    • Set up SPF record in your DNS<br>
+                    • Enable DKIM signing with your email provider<br>
+                    • Create a DMARC policy for your domain<br>
+                    • Test your setup using mail-tester.com<br>
+                    • Monitor DMARC reports regularly
+                `,
+                'Email Type & Compliance': `
+                    • Always include an unsubscribe link in marketing emails<br>
+                    • Add your physical mailing address (CAN-SPAM requirement)<br>
+                    • Honor unsubscribe requests within 10 days<br>
+                    • Only email people who have opted in<br>
+                    • Be transparent about who you are and why you're emailing
+                `
+            };
+
+            return recommendations[title] || 'Review the issues above and make appropriate changes.';
+        }
+
+        function createRecommendationsSection(results, overallScore) {
+            let html = `
+                <div class="diagnostic-section">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">📋 Summary & Next Steps</h3>
+            `;
+
+            if (overallScore < 20) {
+                html += `
+                    <div class="diagnostic-item pass">
+                        <p>Your email looks good! Minor improvements can be made, but overall spam risk is low.</p>
+                    </div>
+                `;
+            } else if (overallScore < 50) {
+                html += `
+                    <div class="diagnostic-item warning">
+                        <p>Your email has moderate spam risk. Review the warnings above and make recommended changes.</p>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="diagnostic-item fail">
+                        <p>Your email has high spam risk. Please address the issues identified above before sending.</p>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="info-box" style="margin-top: 20px;">
+                    <h4>🎯 Priority Actions</h4>
+                    <ol style="margin-left: 20px; line-height: 1.8;">
+                        <li><strong>Fix Critical Issues:</strong> Address all red-flagged items immediately</li>
+                        <li><strong>Verify Authentication:</strong> Ensure SPF, DKIM, and DMARC are properly configured</li>
+                        <li><strong>Test Before Sending:</strong> Use tools like mail-tester.com for a complete analysis</li>
+                        <li><strong>Monitor Metrics:</strong> Track open rates, bounce rates, and spam complaints</li>
+                        <li><strong>Build Reputation:</strong> Start with engaged subscribers and gradually increase volume</li>
+                    </ol>
+                </div>
+
+                <div class="info-box" style="margin-top: 15px;">
+                    <h4>🔧 Recommended Tools</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>mail-tester.com:</strong> Complete email testing and scoring</li>
+                        <li><strong>mxtoolbox.com:</strong> Check SPF, DKIM, DMARC, and blacklist status</li>
+                        <li><strong>Google Postmaster Tools:</strong> Monitor Gmail deliverability</li>
+                        <li><strong>Microsoft SNDS:</strong> Track reputation with Outlook/Hotmail</li>
+                    </ul>
+                </div>
+            </div>
+            `;
+
+            return html;
+        }
+    </script>
+</body>
+</html>
