@@ -131,6 +131,16 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+
+        #signaturePreview:hover {
+            box-shadow: 0 2px 15px rgba(102, 126, 234, 0.2);
+            outline: 1px solid rgba(102, 126, 234, 0.3);
         }
 
         .button-group {
@@ -379,13 +389,15 @@
 
                 <div class="info-box">
                     <h4>📖 How to Use</h4>
-                    <p>After generating your signature:</p>
+                    <p><strong>Step 1:</strong> Click "Copy to Clipboard" button above</p>
+                    <p style="margin-top: 8px;"><strong>Step 2:</strong> Paste into your email client:</p>
                     <ul>
-                        <li><strong>Gmail:</strong> Settings → See all settings → Signature → Paste</li>
+                        <li><strong>Gmail:</strong> Settings → See all settings → Signature → Paste (Ctrl+V / Cmd+V)</li>
                         <li><strong>Outlook:</strong> Settings → Mail → Compose and reply → Paste</li>
                         <li><strong>Apple Mail:</strong> Mail → Settings → Signatures → Paste</li>
                     </ul>
-                    <p style="margin-top: 10px;"><strong>Note:</strong> All icons are embedded - no external hosting needed!</p>
+                    <p style="margin-top: 10px;"><strong>💡 Tip:</strong> If auto-copy doesn't work, manually select the signature in the preview box above, press Ctrl+C (Cmd+C on Mac), then paste into your email client.</p>
+                    <p style="margin-top: 8px;"><strong>Note:</strong> All icons are embedded - no external hosting needed!</p>
                 </div>
             </div>
         </div>
@@ -573,7 +585,7 @@
             return div.innerHTML;
         }
 
-        // Copy to clipboard
+        // Copy to clipboard with HTML formatting
         async function copyToClipboard() {
             const signatureHTML = document.getElementById('signaturePreview').innerHTML;
 
@@ -583,39 +595,69 @@
             }
 
             try {
-                // Create a temporary element
+                // Create a contenteditable div that preserves formatting
                 const temp = document.createElement('div');
+                temp.contentEditable = true;
                 temp.innerHTML = signatureHTML;
+
+                // Style it to be visible but off-screen for better compatibility
+                temp.style.position = 'fixed';
+                temp.style.left = '-9999px';
+                temp.style.top = '0';
+                temp.style.width = '600px';
+
                 document.body.appendChild(temp);
 
-                // Create a range and select the content
+                // Focus and select all content
+                temp.focus();
                 const range = document.createRange();
                 range.selectNodeContents(temp);
                 const selection = window.getSelection();
                 selection.removeAllRanges();
                 selection.addRange(range);
 
-                // Try to copy using the modern API first
-                try {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({
-                            'text/html': new Blob([signatureHTML], { type: 'text/html' }),
-                            'text/plain': new Blob([temp.innerText], { type: 'text/plain' })
-                        })
-                    ]);
-                    showNotification('✓ Copied to clipboard!', true);
-                } catch (err) {
-                    // Fallback to execCommand
-                    document.execCommand('copy');
-                    showNotification('✓ Copied to clipboard!', true);
+                let copySucceeded = false;
+
+                // Method 1: Try modern Clipboard API with proper HTML MIME type
+                if (navigator.clipboard && window.ClipboardItem) {
+                    try {
+                        const htmlBlob = new Blob([signatureHTML], { type: 'text/html' });
+                        const textBlob = new Blob([temp.innerText], { type: 'text/plain' });
+
+                        await navigator.clipboard.write([
+                            new ClipboardItem({
+                                'text/html': htmlBlob,
+                                'text/plain': textBlob
+                            })
+                        ]);
+                        copySucceeded = true;
+                    } catch (clipboardErr) {
+                        console.log('Modern clipboard API failed:', clipboardErr);
+                    }
+                }
+
+                // Method 2: Fallback to execCommand on contentEditable element
+                if (!copySucceeded) {
+                    try {
+                        copySucceeded = document.execCommand('copy');
+                        console.log('execCommand copy result:', copySucceeded);
+                    } catch (execErr) {
+                        console.log('execCommand failed:', execErr);
+                    }
                 }
 
                 // Clean up
                 selection.removeAllRanges();
                 document.body.removeChild(temp);
+
+                if (copySucceeded) {
+                    showNotification('✓ Copied to clipboard! Paste into your email client.', true);
+                } else {
+                    showNotification('⚠️ Auto-copy failed. Please manually select and copy the signature above.', false);
+                }
             } catch (err) {
                 console.error('Failed to copy:', err);
-                showNotification('❌ Failed to copy. Please try again.', false);
+                showNotification('❌ Copy failed. Try manually selecting the signature and pressing Ctrl+C (Cmd+C on Mac).', false);
             }
         }
 
