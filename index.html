@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Signature Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .social-inputs {
+            display: grid;
+            gap: 15px;
+        }
+
+        .color-picker-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .preview-container {
+            background: #f5f5f5;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 200px;
+        }
+
+        .preview-label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        #signaturePreview {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+
+        .info-box li {
+            color: #555;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Checkbox styling */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📧 Email Signature Generator</h1>
+            <p>Create a professional email signature that works in all email clients - no hosting required!</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Form -->
+            <div class="card">
+                <h2>Your Information</h2>
+
+                <div class="form-section">
+                    <h3>Basic Info</h3>
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="jobTitle">Job Title</label>
+                        <input type="text" id="jobTitle" placeholder="Senior Marketing Manager">
+                    </div>
+                    <div class="form-group">
+                        <label for="company">Company</label>
+                        <input type="text" id="company" placeholder="Acme Corporation">
+                    </div>
+                    <div class="form-group">
+                        <label for="department">Department</label>
+                        <input type="text" id="department" placeholder="Marketing">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Contact Details</h3>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="john.doe@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+                    </div>
+                    <div class="form-group">
+                        <label for="website">Website</label>
+                        <input type="url" id="website" placeholder="https://www.company.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <input type="text" id="address" placeholder="123 Main St, City, State 12345">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Social Media Links</h3>
+                    <div class="social-inputs">
+                        <div class="form-group">
+                            <label for="linkedin">LinkedIn Profile URL</label>
+                            <input type="url" id="linkedin" placeholder="https://www.linkedin.com/in/yourprofile">
+                        </div>
+                        <div class="form-group">
+                            <label for="twitter">Twitter/X Profile URL</label>
+                            <input type="url" id="twitter" placeholder="https://twitter.com/yourhandle">
+                        </div>
+                        <div class="form-group">
+                            <label for="github">GitHub Profile URL</label>
+                            <input type="url" id="github" placeholder="https://github.com/yourusername">
+                        </div>
+                        <div class="form-group">
+                            <label for="instagram">Instagram Profile URL</label>
+                            <input type="url" id="instagram" placeholder="https://www.instagram.com/yourhandle">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Customization</h3>
+                    <div class="color-picker-group">
+                        <div class="form-group">
+                            <label for="primaryColor">Primary Color</label>
+                            <input type="color" id="primaryColor" value="#667eea">
+                        </div>
+                        <div class="form-group">
+                            <label for="textColor">Text Color</label>
+                            <input type="color" id="textColor" value="#333333">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fontSize">Font Size</label>
+                        <select id="fontSize">
+                            <option value="12px">Small (12px)</option>
+                            <option value="14px" selected>Medium (14px)</option>
+                            <option value="16px">Large (16px)</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="includeDivider" checked>
+                        <label for="includeDivider">Include divider line</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview and Actions -->
+            <div class="card">
+                <h2>Preview & Export</h2>
+
+                <div class="preview-container">
+                    <span class="preview-label">Live Preview:</span>
+                    <div id="signaturePreview">
+                        <!-- Signature preview will be generated here -->
+                        <p style="color: #999; text-align: center; padding: 40px 20px;">
+                            Fill in your information to see the preview
+                        </p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" id="copyBtn">📋 Copy to Clipboard</button>
+                    <button class="btn btn-secondary" id="resetBtn">🔄 Reset Form</button>
+                </div>
+
+                <div class="info-box">
+                    <h4>📖 How to Use</h4>
+                    <p>After generating your signature:</p>
+                    <ul>
+                        <li><strong>Gmail:</strong> Settings → See all settings → Signature → Paste</li>
+                        <li><strong>Outlook:</strong> Settings → Mail → Compose and reply → Paste</li>
+                        <li><strong>Apple Mail:</strong> Mail → Settings → Signatures → Paste</li>
+                    </ul>
+                    <p style="margin-top: 10px;"><strong>Note:</strong> All icons are embedded - no external hosting needed!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">✓ Copied to clipboard!</div>
+
+    <script>
+        // Social media icon data URIs (embedded SVG)
+        const icons = {
+            linkedin: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMDA3N2I1Ij48cGF0aCBkPSJNMTkgMEg1QzIuMjM5IDAgMCAyLjIzOSAwIDV2MTRjMCAyLjc2MSAyLjIzOSA1IDUgNWgxNGMyLjc2MiAwIDUtMi4yMzkgNS01VjVjMC0yLjc2MS0yLjIzOC01LTUtNXpNOCAxOUg1VjhoM3YxMXpNNi41IDZDNS42NzIgNiA1IDUuMzI4IDUgNC41UzUuNjcyIDMgNi41IDNzMS41LjY3MiAxLjUgMS41UzcuMzI4IDYgNi41IDZ6TTE5IDE5aC0zdi01LjYwNGMwLTMuMzY4LTQtMy4xMTMtNCAwVjE5aC0zVjhoM2MwIDAgMCAuNTgzIDAgMS41QzEzLjI1IDYuNSAxNyA2LjI5IDE3IDExLjV2Ny41eiIvPjwvc3ZnPg==',
+            twitter: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMWRhMWYyIj48cGF0aCBkPSJNMjQgNC41NTdhMTEuNjE5IDExLjYxOSAwIDAxLTMuNDIuOTM3IDUuNTA4IDUuNTA4IDAgMDAyLjQ2MS0zLjA5MyA1LjE2NyA1LjE2NyAwIDAxLTEuMjYuNDg3IDUuNTQyIDUuNTQyIDAgMDAtNC4wNzgtMS43NzEgNS41NDIgNS41NDIgMCAwMC01LjUyMyA1LjUyNGMwIC40MzMuMDQ5Ljg1NS4xNDQgMS4yNjFhMTUuNjk5IDE1LjY5OSAwIDAxLTExLjQtNS43NzUgNS41NjQgNS41NjQgMCAwMC0uNzQ4IDIuNzgyIDUuNTQyIDUuNTQyIDAgMDAyLjQ2MyA0LjYwNyA1LjUyIDUuNTIgMCAwMS0yLjUwNS0uNjkydi4wNzFhNS41NDMgNS41NDMgMCAwMDQuNDQxIDUuNDI1IDUuNTIgNS41MiAwIDAxLTIuNDk5LjA5NSA1LjU0NSA1LjU0NSAwIDAwNS4xNzggMy44NDggMTEuMTA4IDExLjEwOCAwIDAxLTYuODc3IDIuMzc1Yy0uNDQ3IDAtLjg4OC0uMDI2LTEuMzIyLS4wNzcgMTUuNzAyIDAgOC40NzcgNS40NDEgMTMuNDUgNS40NDEgNi4wOTkgMCAxNS4xNTUtMi43NyAxNS4xNTUtMTEuNTQ1IDAtLjE3NS0uMDA0LS4zNS0uMDEyLS41MjRhMTEuODcyIDExLjg3MiAwIDAwMi45MS0yLjkxMnoiLz48L3N2Zz4=',
+            github: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTgxNzE3Ij48cGF0aCBkPSJNMTIgMGMtNi42MjYgMC0xMiA1LjM3My0xMiAxMiAwIDUuMzAyIDMuNDM4IDkuOCA4LjIwNyAxMS4zODcuNTk5LjExMS43OTMtLjI2MS43OTMtLjU3N3YtMi4yMzRjLTMuMzM4LjcyNi00LjAzMy0xLjQxNi00LjAzMy0xLjQxNi0uNTQ2LTEuMzg3LTEuMzMzLTEuNzU2LTEuMzMzLTEuNzU2LTEuMDg5LS43NDUuMDgzLS43MjkuMDgzLS43MjkgMS4yMDUuMDg0IDEuODM5IDEuMjM3IDEuODM5IDEuMjM3IDEuMDcgMS44MzQgMi44MDcgMS4zMDQgMy40OTIuOTk3LjEwNy0uNzc1LjQxOC0xLjMwNS43NjItMS42MDQtMi42NjUtLjMwNS01LjQ2Ny0xLjMzNC01LjQ2Ny01LjkzMSAwLTEuMzExLjQ2OS0yLjM4MSAxLjIzNi0zLjIyMS0uMTI0LS4zMDMtLjUzNS0xLjUyNC4xMTctMy4xNzYgMCAwIDEuMDA4LS4zMjIgMy4zIDEuMjMuOTU3LS4yNjYgMS45ODMtLjM5OSAzLjAwMy0uNDA0IDEuMDIuMDA1IDIuMDQ3LjEzOCAzLjAwNi40MDQgMi4yOTEtMS41NTIgMy4yOTctMS4yMyAzLjI5Ny0xLjIzLjY1MyAxLjY1My4yNDIgMi44NzQuMTE4IDMuMTc2Ljc3Ljg0IDEuMjM1IDEuOTExIDEuMjM1IDMuMjIxIDAgNC42MDktMi44MDcgNS42MjQtNS40NzkgNS45MjEuNDMuMzcyLjgyMyAxLjEwMi44MjMgMi4yMjJ2My4yOTNjMCAuMzE5LjE5Mi42OTQuODAxLjU3NiA0Ljc2NS0xLjU4OSA4LjE5OS02LjA4NiA4LjE5OS0xMS4zODYgMC02LjYyNy01LjM3My0xMi0xMi0xMnoiLz48L3N2Zz4=',
+            instagram: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ1cmwoI2luc3RhZ3JhbUdyYWRpZW50KSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJpbnN0YWdyYW1HcmFkaWVudCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2Y1OGUyOTtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjUwJSIgc3R5bGU9InN0b3AtY29sb3I6I2Q2MjQ3NjtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM5YjJjMmE7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTTEyIDIuMTYzYzMuMjA0IDAgMy41ODQuMDEyIDQuODUuMDcgMy4yNTIuMTQ4IDQuNzcxIDEuNjkxIDQuOTE5IDQuOTE5LjA1OCAxLjI2NS4wNjkgMS42NDUuMDY5IDQuODQ4IDAgMy4yMDUtLjAxMiAzLjU4NC0uMDY5IDQuODQ5LS4xNDkgMy4yMjUtMS42NjQgNC43NzEtNC45MTkgNC45MTktMS4yNjYuMDU4LTEuNjQ0LjA3LTQuODUuMDctMy4yMDQgMC0zLjU4NC0uMDEyLTQuODQ5LS4wNy0zLjI2LS4xNDktNC43NzEtMS42OTktNC45MTktNC45Mi0uMDU4LTEuMjY1LS4wNy0xLjY0NC0uMDctNC44NDkgMC0zLjIwNC4wMTMtMy41ODMuMDctNC44NDkuMTQ5LTMuMjI3IDEuNjY0LTQuNzcxIDQuOTE5LTQuOTE5IDEuMjY2LS4wNTcgMS42NDUtLjA2OSA0Ljg0OS0uMDY5ek0xMiAwQzguNzQxIDAgOC4zMzMuMDE0IDcuMDUzLjA3MiAyLjY5NS4yNzIuMjczIDIuNjkuMDczIDcuMDUyLjAxNCA4LjMzMyAwIDguNzQxIDAgMTJjMCAzLjI1OS4wMTQgMy42NjguMDcyIDQuOTQ4LjIgNC4zNTggMi42MTggNi43OCA2Ljk4IDYuOThDOC4zMzMgMjMuOTg2IDguNzQxIDI0IDEyIDI0YzMuMjU5IDAgMy42NjgtLjAxNCA0Ljk0OC0uMDcyIDQuMzU0LS4yIDYuNzgyLTIuNjE4IDYuOTc5LTYuOTguMDU4LTEuMjguMDcyLTEuNjg5LjA3Mi00Ljk0OCAwLTMuMjU5LS4wMTQtMy42NjctLjA3Mi00Ljk0Ny0uMTk2LTQuMzU0LTIuNjE3LTYuNzgtNi45NzktNi45OEMxNS42NjguMDE0IDE1LjI1OSAwIDEyIDB6bTAgNS44MzhhNi4xNjIgNi4xNjIgMCAxMDAgMTIuMzI0IDYuMTYyIDYuMTYyIDAgMDAwLTEyLjMyNHpNMTIgMTZhNCA0IDAgMTEwLTggNCA0IDAgMDEwIDh6bTYuNDA2LTExLjg0NWExLjQ0IDEuNDQgMCAxMDAgMi44ODkgMS40NCAxLjQ0IDAgMDAwLTIuODg5eiIvPjwvc3ZnPg==',
+            email: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjNjY3ZWVhIj48cGF0aCBkPSJNMjAgNEg0Yy0xLjEgMC0xLjk5LjktMS45OSAyTDIgMThjMCAxLjEuOSAyIDIgMmgxNmMxLjEgMCAyLS45IDItMlY2YzAtMS4xLS45LTItMi0yem0wIDRsLTggNS04LTVWNmw4IDUgOC01djJ6Ii8+PC9zdmc+',
+            phone: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjNjY3ZWVhIj48cGF0aCBkPSJNNi42MiAxMC43OWMxLjQ0IDIuODMgMy43NiA1LjE0IDYuNTkgNi41OWwyLjItMi4yYy4yNy0uMjcuNjctLjM2IDEuMDItLjI0IDEuMTIuMzcgMi4zMy41NyAzLjU3LjU3LjU1IDAgMSAuNDUgMSAxVjIxYzAgLjU1LS40NSAxLTEgMS05LjM5IDAtMTctNy42MS0xNy0xNyAwLS41NS40NS0xIDEtMWgzLjVjLjU1IDAgMSAuNDUgMSAxIDAgMS4yNS4yIDIuNDUuNTcgMy41Ny4xMS4zNS4wMy43NC0uMjUgMS4wMmwtMi4yIDIuMnoiLz48L3N2Zz4=',
+            website: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjNjY3ZWVhIj48cGF0aCBkPSJNMTEuOTkgMkM2LjQ3IDIgMiA2LjQ4IDIgMTJzNC40NyAxMCA5Ljk5IDEwQzE3LjUyIDIyIDIyIDE3LjUyIDIyIDEyUzE3LjUyIDIgMTEuOTkgMnptNi45MyA2aC0yLjk1YTEzLjY1IDEzLjY1IDAgMDAtMS4yMy0zLjE2Yy45MiAxLjYgMS43MSAzLjE3IDIuMTggNC4xNnptLTYuOTQgMEg4Ljk5QTEzLjY1IDEzLjY1IDAgMDA3Ljc3IDQuODRjLjkxIDEuNiAxLjcxIDMuMTcgMi4xOCA0LjE2em0tLjAxIDJoMi4wMWMtLjE4IDIuNDUtLjc1IDQuNzgtMS41NCA2Ljc3LS44LTEuOTktMS4zNi00LjMyLTEuNTQtNi43N3ptLTIgMEg3Ljk3Yy4xOCAyLjQ1Ljc1IDQuNzggMS41NCA2Ljc3Ljc5LTEuOTkgMS4zNS00LjMyIDEuNTQtNi43N3ptLTQuNjktMkgyLjI2Yy4xOS0xLjIzLjYxLTIuMzggMS4yMi0zLjQgMS4zNS0xLjk0IDMuNDktMy4zNCA1LjkyLTMuOC0uNDcgMS4wNC0uOTMgMi4yNi0xLjI5IDMuNjB6bTEyLjQyIDBjLjM1LTEuMzQuNzgtMi41NiAxLjI2LTMuNiAyLjQzLjQ2IDQuNTcgMS44NiA1LjkyIDMuOC42MSAxLjAyIDEuMDMgMi4xNyAxLjIyIDMuNGgtMy40NnoiLz48L3N2Zz4=',
+            address: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjNjY3ZWVhIj48cGF0aCBkPSJNMTIgMkM4LjEzIDIgNSA1LjEzIDUgOWMwIDUuMjUgNyAxMyA3IDEzczctNy43NSA3LTEzYzAtMy44Ny0zLjEzLTctNy03em0wIDkuNWMtMS4zOCAwLTIuNS0xLjEyLTIuNS0yLjVzMS4xMi0yLjUgMi41LTIuNSAyLjUgMS4xMiAyLjUgMi41LTEuMTIgMi41LTIuNSAyLjV6Ii8+PC9zdmc+'
+        };
+
+        // Get all form inputs
+        const inputs = {
+            fullName: document.getElementById('fullName'),
+            jobTitle: document.getElementById('jobTitle'),
+            company: document.getElementById('company'),
+            department: document.getElementById('department'),
+            email: document.getElementById('email'),
+            phone: document.getElementById('phone'),
+            website: document.getElementById('website'),
+            address: document.getElementById('address'),
+            linkedin: document.getElementById('linkedin'),
+            twitter: document.getElementById('twitter'),
+            github: document.getElementById('github'),
+            instagram: document.getElementById('instagram'),
+            primaryColor: document.getElementById('primaryColor'),
+            textColor: document.getElementById('textColor'),
+            fontSize: document.getElementById('fontSize'),
+            includeDivider: document.getElementById('includeDivider')
+        };
+
+        // Generate signature HTML
+        function generateSignature() {
+            const data = {};
+            for (let key in inputs) {
+                data[key] = inputs[key].type === 'checkbox' ? inputs[key].checked : inputs[key].value;
+            }
+
+            if (!data.fullName) {
+                document.getElementById('signaturePreview').innerHTML =
+                    '<p style="color: #999; text-align: center; padding: 40px 20px;">Please enter at least your name to generate a signature</p>';
+                return;
+            }
+
+            let html = `
+<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: ${data.fontSize}; line-height: 1.6; color: ${data.textColor};">
+    <tr>
+        <td style="padding: 0;">
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td style="padding: 0 0 10px 0;">
+                        <strong style="font-size: ${parseInt(data.fontSize) + 4}px; color: ${data.primaryColor}; display: block;">${escapeHtml(data.fullName)}</strong>
+                        ${data.jobTitle ? `<span style="display: block; color: ${data.textColor};">${escapeHtml(data.jobTitle)}</span>` : ''}
+                        ${data.department && data.company ? `<span style="display: block; color: ${data.textColor};">${escapeHtml(data.department)} | ${escapeHtml(data.company)}</span>` : data.company ? `<span style="display: block; color: ${data.textColor};">${escapeHtml(data.company)}</span>` : data.department ? `<span style="display: block; color: ${data.textColor};">${escapeHtml(data.department)}</span>` : ''}
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+`;
+
+            // Add divider if enabled
+            if (data.includeDivider) {
+                html += `
+    <tr>
+        <td style="padding: 10px 0;">
+            <table cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                <tr>
+                    <td style="border-top: 2px solid ${data.primaryColor}; padding: 0;"></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+`;
+            }
+
+            // Add contact information
+            html += `
+    <tr>
+        <td style="padding: ${data.includeDivider ? '10' : '0'}px 0 0 0;">
+            <table cellpadding="0" cellspacing="0" border="0">
+`;
+
+            if (data.email) {
+                html += `
+                <tr>
+                    <td style="padding: 3px 0; vertical-align: middle;">
+                        <img src="${icons.email}" alt="Email" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;">
+                        <a href="mailto:${escapeHtml(data.email)}" style="color: ${data.textColor}; text-decoration: none; vertical-align: middle;">${escapeHtml(data.email)}</a>
+                    </td>
+                </tr>
+`;
+            }
+
+            if (data.phone) {
+                html += `
+                <tr>
+                    <td style="padding: 3px 0; vertical-align: middle;">
+                        <img src="${icons.phone}" alt="Phone" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;">
+                        <a href="tel:${escapeHtml(data.phone.replace(/\s/g, ''))}" style="color: ${data.textColor}; text-decoration: none; vertical-align: middle;">${escapeHtml(data.phone)}</a>
+                    </td>
+                </tr>
+`;
+            }
+
+            if (data.website) {
+                const websiteDisplay = data.website.replace(/^https?:\/\//i, '');
+                html += `
+                <tr>
+                    <td style="padding: 3px 0; vertical-align: middle;">
+                        <img src="${icons.website}" alt="Website" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;">
+                        <a href="${escapeHtml(data.website)}" style="color: ${data.textColor}; text-decoration: none; vertical-align: middle;">${escapeHtml(websiteDisplay)}</a>
+                    </td>
+                </tr>
+`;
+            }
+
+            if (data.address) {
+                html += `
+                <tr>
+                    <td style="padding: 3px 0; vertical-align: middle;">
+                        <img src="${icons.address}" alt="Address" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;">
+                        <span style="color: ${data.textColor}; vertical-align: middle;">${escapeHtml(data.address)}</span>
+                    </td>
+                </tr>
+`;
+            }
+
+            html += `
+            </table>
+        </td>
+    </tr>
+`;
+
+            // Add social media icons
+            const socialLinks = [];
+            if (data.linkedin) socialLinks.push({ url: data.linkedin, icon: icons.linkedin, alt: 'LinkedIn' });
+            if (data.twitter) socialLinks.push({ url: data.twitter, icon: icons.twitter, alt: 'Twitter' });
+            if (data.github) socialLinks.push({ url: data.github, icon: icons.github, alt: 'GitHub' });
+            if (data.instagram) socialLinks.push({ url: data.instagram, icon: icons.instagram, alt: 'Instagram' });
+
+            if (socialLinks.length > 0) {
+                html += `
+    <tr>
+        <td style="padding: 15px 0 0 0;">
+            <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+`;
+                socialLinks.forEach((social, index) => {
+                    html += `
+                    <td style="padding: 0 ${index < socialLinks.length - 1 ? '10' : '0'}px 0 0;">
+                        <a href="${escapeHtml(social.url)}" style="display: inline-block;">
+                            <img src="${social.icon}" alt="${social.alt}" width="24" height="24" style="border: 0; display: block;">
+                        </a>
+                    </td>
+`;
+                });
+                html += `
+                </tr>
+            </table>
+        </td>
+    </tr>
+`;
+            }
+
+            html += `
+</table>`;
+
+            document.getElementById('signaturePreview').innerHTML = html;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Copy to clipboard
+        async function copyToClipboard() {
+            const signatureHTML = document.getElementById('signaturePreview').innerHTML;
+
+            if (signatureHTML.includes('Please enter at least your name')) {
+                showNotification('❌ Please fill in your information first!', false);
+                return;
+            }
+
+            try {
+                // Create a temporary element
+                const temp = document.createElement('div');
+                temp.innerHTML = signatureHTML;
+                document.body.appendChild(temp);
+
+                // Create a range and select the content
+                const range = document.createRange();
+                range.selectNodeContents(temp);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+
+                // Try to copy using the modern API first
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({
+                            'text/html': new Blob([signatureHTML], { type: 'text/html' }),
+                            'text/plain': new Blob([temp.innerText], { type: 'text/plain' })
+                        })
+                    ]);
+                    showNotification('✓ Copied to clipboard!', true);
+                } catch (err) {
+                    // Fallback to execCommand
+                    document.execCommand('copy');
+                    showNotification('✓ Copied to clipboard!', true);
+                }
+
+                // Clean up
+                selection.removeAllRanges();
+                document.body.removeChild(temp);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                showNotification('❌ Failed to copy. Please try again.', false);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, success) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.background = success ? '#4caf50' : '#f44336';
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Reset form
+        function resetForm() {
+            if (confirm('Are you sure you want to reset the form?')) {
+                for (let key in inputs) {
+                    if (inputs[key].type === 'checkbox') {
+                        inputs[key].checked = key === 'includeDivider';
+                    } else if (inputs[key].type === 'color') {
+                        inputs[key].value = key === 'primaryColor' ? '#667eea' : '#333333';
+                    } else if (inputs[key].tagName === 'SELECT') {
+                        inputs[key].value = '14px';
+                    } else {
+                        inputs[key].value = '';
+                    }
+                }
+                generateSignature();
+            }
+        }
+
+        // Add event listeners
+        for (let key in inputs) {
+            inputs[key].addEventListener('input', generateSignature);
+            inputs[key].addEventListener('change', generateSignature);
+        }
+
+        document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+        document.getElementById('resetBtn').addEventListener('click', resetForm);
+
+        // Initial generation
+        generateSignature();
+
+        // Add sample data for demonstration (optional - remove in production)
+        window.addEventListener('DOMContentLoaded', () => {
+            inputs.fullName.value = 'John Doe';
+            inputs.jobTitle.value = 'Senior Marketing Manager';
+            inputs.company.value = 'Acme Corporation';
+            inputs.email.value = 'john.doe@acme.com';
+            inputs.phone.value = '+1 (555) 123-4567';
+            inputs.website.value = 'https://www.acme.com';
+            inputs.linkedin.value = 'https://www.linkedin.com/in/johndoe';
+            generateSignature();
+        });
+    </script>
+</body>
+</html>
