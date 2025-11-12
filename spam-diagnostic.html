@@ -289,6 +289,49 @@
             margin-top: 5px;
         }
 
+        .drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9ff;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .drop-zone:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #4caf50;
+            background: #e8f5e9;
+            transform: scale(1.02);
+        }
+
+        .drop-zone-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-text {
+            color: #667eea;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .drop-zone-subtext {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
         @media (max-width: 968px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -315,6 +358,13 @@
             <!-- Input Form -->
             <div class="card">
                 <h2>Email Information</h2>
+
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-icon">📧</div>
+                    <div class="drop-zone-text">Drag & Drop Email File Here</div>
+                    <div class="drop-zone-subtext">or click to browse (.eml, .msg, .txt files)</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".eml,.msg,.txt,.html,.htm">
 
                 <div class="info-box">
                     <h4>What does this tool check?</h4>
@@ -436,6 +486,174 @@
                 'marketing solution', 'auto email removal', 'click to subscribe'
             ]
         };
+
+        // Drag and drop functionality
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('drag-over');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('drag-over');
+            }, false);
+        });
+
+        // Handle dropped files
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        // Handle click to browse
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFiles(e.target.files);
+            }
+        });
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            const file = files[0];
+            const fileName = file.name.toLowerCase();
+
+            // Check file type
+            if (!fileName.endsWith('.eml') && !fileName.endsWith('.msg') &&
+                !fileName.endsWith('.txt') && !fileName.endsWith('.html') &&
+                !fileName.endsWith('.htm')) {
+                alert('Please upload a valid email file (.eml, .msg, .txt, .html)');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                parseEmailFile(content, fileName);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseEmailFile(content, fileName) {
+            let emailData = {
+                from: '',
+                fromName: '',
+                subject: '',
+                body: ''
+            };
+
+            if (fileName.endsWith('.eml') || fileName.endsWith('.msg')) {
+                // Parse email headers and body
+                const lines = content.split('\n');
+                let inHeaders = true;
+                let bodyLines = [];
+                let currentHeader = '';
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+
+                    if (inHeaders) {
+                        // Check if we've reached the body (empty line)
+                        if (line.trim() === '') {
+                            inHeaders = false;
+                            continue;
+                        }
+
+                        // Check for header continuation (starts with space or tab)
+                        if (line.match(/^[\s\t]/) && currentHeader) {
+                            // Continuation of previous header
+                            continue;
+                        }
+
+                        // Parse headers
+                        if (line.match(/^From:/i)) {
+                            const fromMatch = line.match(/From:\s*(?:"?([^"<]+)"?\s*)?<?([^>]+)>?/i);
+                            if (fromMatch) {
+                                emailData.fromName = (fromMatch[1] || '').trim();
+                                emailData.from = (fromMatch[2] || '').trim();
+                            }
+                            currentHeader = 'from';
+                        } else if (line.match(/^Subject:/i)) {
+                            emailData.subject = line.replace(/^Subject:\s*/i, '').trim();
+                            currentHeader = 'subject';
+                        } else if (line.match(/^[A-Z][a-zA-Z-]+:/)) {
+                            currentHeader = '';
+                        }
+                    } else {
+                        // We're in the body
+                        bodyLines.push(line);
+                    }
+                }
+
+                emailData.body = bodyLines.join('\n').trim();
+
+                // Clean up body - remove excessive whitespace and quoted-printable encoding
+                emailData.body = emailData.body
+                    .replace(/=\r?\n/g, '') // Remove quoted-printable line breaks
+                    .replace(/=[0-9A-F]{2}/g, (match) => {
+                        // Decode quoted-printable characters
+                        return String.fromCharCode(parseInt(match.substring(1), 16));
+                    });
+
+            } else {
+                // For .txt or .html files, use the entire content as body
+                emailData.body = content;
+
+                // Try to extract subject from first line if it looks like a subject
+                const firstLine = content.split('\n')[0];
+                if (firstLine && firstLine.length < 100 && !firstLine.includes('<')) {
+                    emailData.subject = firstLine;
+                    emailData.body = content.substring(firstLine.length).trim();
+                }
+            }
+
+            // Populate form fields
+            if (emailData.from) {
+                document.getElementById('senderEmail').value = emailData.from;
+            }
+            if (emailData.fromName) {
+                document.getElementById('senderName').value = emailData.fromName;
+            }
+            if (emailData.subject) {
+                document.getElementById('subject').value = emailData.subject;
+            }
+            if (emailData.body) {
+                document.getElementById('emailContent').value = emailData.body;
+            }
+
+            // Update drop zone to show file was loaded
+            dropZone.innerHTML = `
+                <div class="drop-zone-icon">✅</div>
+                <div class="drop-zone-text">Email File Loaded Successfully!</div>
+                <div class="drop-zone-subtext">Review the populated fields below and click Analyze</div>
+            `;
+
+            // Scroll to form
+            document.getElementById('diagnosticForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
 
         // Form submission handler
         document.getElementById('diagnosticForm').addEventListener('submit', function(e) {
